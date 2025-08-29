@@ -1,69 +1,42 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>damarekozou BBS</title>
-<style>
-  body {
-    font-family: sans-serif;
-    margin: 10px;
-  }
-  #post-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 20px;
-  }
-  #post-form input, #post-form textarea, #post-form button {
-    font-size: 12px;
-  }
-  #name { width: 120px; }
-  #seed { width: 100px; }
-  #password { width: 100px; }
-  #text { width: 300px; height: 50px; }
-  button { height: 30px; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  th, td {
-    border: 1px solid #ccc;
-    padding: 5px;
-    text-align: left;
-  }
-  th {
-    background: #f0f0f0;
-  }
-  .admin { color: red; }
-</style>
-<script src="/socket.io/socket.io.js"></script>
-<script src="main.js"></script>
-</head>
-<body>
-
-<h2>damarekozou BBS</h2>
-
-<form id="post-form">
-  <input id="name" type="text" placeholder="名前" maxlength="50">
-  <input id="password" type="password" placeholder="パスワード">
-  <textarea id="text" placeholder="投稿内容"></textarea>
-  <button type="submit">送信</button>
-  <button type="button" id="refresh">最新を取得</button>
-</form>
-
-
-<table>
-  <thead>
-    <tr>
-      <th>投稿番号</th>
-      <th>名前 (シード)</th>
-      <th>投稿内容</th>
-      <th>作成日時</th>
-    </tr>
-  </thead>
-  <tbody id="posts"></tbody>
-</table>
-
-<script src="main.js></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>投稿システム</title>
+    <style>
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #ddd; padding: 8px; }
+      th { background-color: #f2f2f2; }
+      .admin-name, .admin-id, .admin-text { color: red; }
+      .a-name, .a-id, .a-text { color: blue; }
+      .note h5 { margin: 0 0 8px 0; }
+    </style>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="./bbs.js" defer></script>
+  </head>
+  <body>
+    <h1>DeproyBBS 2</h1>
+    <form id="post-form">
+      <input id="name" type="text" placeholder="名前（任意）" maxlength="50"/>
+      <input id="seed" type="password" placeholder="パスワード（任意）"/>
+      <textarea id="content" rows="4" placeholder="投稿本文"></textarea>
+      <button type="submit">投稿</button>
+      <button type="button" id="refresh">最新を取得</button>
+      <div class="note">
+        <h5 id="topic">新しい投稿が出ないときは最新を取得ボタンを押してね！</h5>
+      </div>
+    </form>
+    <table id="posts" class="posts">
+      <thead>
+        <tr>
+          <th>投稿番号</th>
+          <th>名前</th>
+          <th>本文</th>
+          <th>色</th>
+          <th>投稿時刻</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </body>
 </html>
