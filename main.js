@@ -1,74 +1,69 @@
-const socket = io("https://damarekozou.onrender.com");
+(() => {
+  const socket = io("https://damarekozou.onrender.com");
+  const form = document.getElementById("post-form");
+  const nameInput = document.getElementById("name");
+  const seedInput = document.getElementById("seed");
+  const passInput = document.getElementById("password");
+  const textInput = document.getElementById("text");
+  const postsTbody = document.getElementById("posts");
+  const refreshBtn = document.getElementById("refresh");
 
-const postsContainer = document.getElementById("posts");
-const nameInput = document.getElementById("name");
-const contentInput = document.getElementById("content");
-const sendBtn = document.getElementById("sendBtn");
+  function renderPosts(posts) {
+    postsTbody.innerHTML = "";
+    // 最新投稿が上になるように逆順で描画
+    posts.sort((a,b) => b.id - a.id).forEach(post => {
+      const tr = document.createElement("tr");
+      tr.dataset.id = post.id;
+      tr.dataset.name = post.name;
+      tr.dataset.seed = post.seed;
+      tr.dataset.content = post.content;
+      tr.dataset.color = post.color;
+      tr.dataset.timestamp = post.timestamp;
 
-// Helper: タイムスタンプ整形
-function formatTime(ts) {
-    const d = new Date(ts);
-    return d.toLocaleString();
-}
+      const tdId = document.createElement("td");
+      tdId.textContent = post.id;
 
-// 投稿表示
-function renderPosts(posts) {
-    postsContainer.innerHTML = "";
-    posts.sort((a,b) => b.id - a.id).forEach(p => {
-        const div = document.createElement("div");
-        div.className = "post";
+      const tdName = document.createElement("td");
+      tdName.textContent = post.name;
+      if(post.seed) tdName.textContent += ` (${post.seed})`;
+      if(post.color === "red") tdName.classList.add("admin");
 
-        const header = document.createElement("div");
-        header.className = "header";
+      const tdContent = document.createElement("td");
+      tdContent.textContent = post.content;
 
-        const nameSpan = document.createElement("span");
-        nameSpan.className = "name";
-        nameSpan.style.color = p.color || "black";
-        nameSpan.textContent = p.name;
+      const tdTime = document.createElement("td");
+      tdTime.textContent = new Date(post.timestamp).toLocaleString();
 
-        const seedSpan = document.createElement("span");
-        seedSpan.className = "seed";
-        seedSpan.textContent = p.seed ? `[${p.seed}]` : "";
-
-        const timeSpan = document.createElement("span");
-        timeSpan.className = "timestamp";
-        timeSpan.textContent = formatTime(p.timestamp);
-
-        header.appendChild(nameSpan);
-        header.appendChild(seedSpan);
-        header.appendChild(timeSpan);
-
-        const contentDiv = document.createElement("div");
-        contentDiv.className = "content";
-        contentDiv.textContent = p.content;
-
-        div.appendChild(header);
-        div.appendChild(contentDiv);
-        postsContainer.appendChild(div);
+      tr.append(tdId, tdName, tdContent, tdTime);
+      postsTbody.appendChild(tr);
     });
-}
+  }
 
-// 初期データ取得
-socket.on("init_posts", renderPosts);
+  socket.on("init_posts", renderPosts);
+  socket.on("new_post", (post) => renderPosts([post, ...Array.from(postsTbody.children).map(tr => ({
+    id: parseInt(tr.dataset.id),
+    name: tr.dataset.name,
+    seed: tr.dataset.seed,
+    content: tr.dataset.content,
+    color: tr.dataset.color,
+    timestamp: tr.dataset.timestamp
+  }))]));
 
-// 新規投稿受信
-socket.on("new_post", post => {
-    renderPosts([post, ...Array.from(postsContainer.children).map(div => ({
-        id: parseInt(div.dataset.id),
-        name: div.querySelector(".name").textContent,
-        seed: div.querySelector(".seed").textContent.replace(/\[|\]/g,""),
-        content: div.querySelector(".content").textContent,
-        color: div.querySelector(".name").style.color,
-        timestamp: new Date(div.querySelector(".timestamp").textContent).getTime()
-    }))]);
-});
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    if(!nameInput.value || !textInput.value) return alert("名前と本文を入力してください");
+    const payload = {
+      name: nameInput.value,
+      seed: seedInput.value || undefined,
+      password: passInput.value || "",
+      content: textInput.value
+    };
+    socket.emit("post", payload, res => {
+      if(res && res.ok) textInput.value = "";
+    });
+  });
 
-// 投稿送信
-sendBtn.addEventListener("click", () => {
-    const name = nameInput.value.trim();
-    const content = contentInput.value.trim();
-    if(!name || !content) return alert("名前と内容を入力してください");
-
-    socket.emit("post", { name, content });
-    contentInput.value = "";
-});
+  refreshBtn.addEventListener("click", () => {
+    socket.emit("noop");
+  });
+})();
