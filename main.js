@@ -3,7 +3,7 @@
   const form = document.getElementById("post-form");
   const nameInput = document.getElementById("name");
   const seedInput = document.getElementById("seed");
-  const passInput = document.getElementById("password");
+
   const textInput = document.getElementById("text");
   const postsTbody = document.getElementById("posts");
   const refreshBtn = document.getElementById("refresh");
