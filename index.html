@@ -2,82 +2,140 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>コピーBBSクライアント</title>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<title>damarekozou BBS</title>
 <style>
-body {
+  body {
     font-family: sans-serif;
-    max-width: 700px;
-    margin: auto;
-    padding: 20px;
-}
-#new-post {
+    margin: 10px;
+  }
+  #post-form {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
     margin-bottom: 20px;
-}
-#new-post input[type="text"],
-#new-post textarea {
-    font-size: 0.8em;
-    padding: 3px;
-    border-radius: 3px;
+  }
+  #post-form input, #post-form textarea, #post-form button {
+    font-size: 12px;
+  }
+  #name { width: 120px; }
+  #seed { width: 100px; }
+  #password { width: 100px; }
+  #text { width: 300px; height: 50px; }
+  button { height: 30px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
     border: 1px solid #ccc;
-}
-#new-post input[type="text"] {
-    width: 100px;
-}
-#new-post textarea {
-    flex: 1;
-    height: 50px;
-}
-#new-post button {
-    font-size: 0.8em;
-    padding: 3px 8px;
-    border-radius: 3px;
-    cursor: pointer;
-}
-.post {
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    margin-bottom: 10px;
     padding: 5px;
-}
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.name {
-    font-weight: bold;
-}
-.seed {
-    font-size: 0.8em;
-    color: #666;
-    margin-left: 5px;
-}
-.timestamp {
-    font-size: 0.7em;
-    color: #999;
-}
-.content {
-    margin-top: 5px;
-    white-space: pre-wrap;
-}
+    text-align: left;
+  }
+  th {
+    background: #f0f0f0;
+  }
+  .admin { color: red; }
 </style>
+<script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
-<h1>コピーBBSクライアント</h1>
+<h2>damarekozou BBS</h2>
 
-<div id="new-post">
-    <input type="text" id="name" placeholder="名前">
-    <textarea id="content" placeholder="投稿内容"></textarea>
-    <button id="sendBtn">送信</button>
-</div>
+<form id="post-form">
+  <input id="name" type="text" placeholder="名前" maxlength="50">
+  <input id="seed" type="text" placeholder="シード（自分で決める）" maxlength="8">
+  <input id="password" type="password" placeholder="パスワード">
+  <textarea id="text" placeholder="投稿内容"></textarea>
+  <button type="submit">送信</button>
+  <button type="button" id="refresh">最新を取得</button>
+</form>
 
-<div id="posts"></div>
+<table>
+  <thead>
+    <tr>
+      <th>投稿番号</th>
+      <th>名前 (シード)</th>
+      <th>投稿内容</th>
+      <th>作成日時</th>
+    </tr>
+  </thead>
+  <tbody id="posts"></tbody>
+</table>
 
-<script src="main.js"></script>
+<script>
+(() => {
+  const socket = io("https://damarekozou.onrender.com");
+  const form = document.getElementById("post-form");
+  const nameInput = document.getElementById("name");
+  const seedInput = document.getElementById("seed");
+  const passInput = document.getElementById("password");
+  const textInput = document.getElementById("text");
+  const postsTbody = document.getElementById("posts");
+  const refreshBtn = document.getElementById("refresh");
+
+  // 運営IPはサーバ側で判定するので、クライアント側はシード非表示にするかだけ
+  socket.on("init_posts", renderPosts);
+  socket.on("new_post", (post) => {
+    renderPosts([post, ...Array.from(postsTbody.children).map(tr => ({
+      id: parseInt(tr.dataset.id),
+      name: tr.dataset.name,
+      seed: tr.dataset.seed,
+      content: tr.dataset.content,
+      color: tr.dataset.color,
+      timestamp: tr.dataset.timestamp
+    }))]);
+  });
+
+  function renderPosts(posts) {
+    postsTbody.innerHTML = "";
+    for (const post of posts) {
+      const tr = document.createElement("tr");
+      tr.dataset.id = post.id;
+      tr.dataset.name = post.name;
+      tr.dataset.seed = post.seed;
+      tr.dataset.content = post.content;
+      tr.dataset.color = post.color;
+      tr.dataset.timestamp = post.timestamp;
+
+      const tdId = document.createElement("td");
+      tdId.textContent = post.id;
+
+      const tdName = document.createElement("td");
+      tdName.textContent = post.name;
+      if(post.seed) tdName.textContent += ` (${post.seed})`;
+      if(post.color === "red") tdName.classList.add("admin");
+
+      const tdContent = document.createElement("td");
+      tdContent.textContent = post.content;
+
+      const tdTime = document.createElement("td");
+      const d = new Date(post.timestamp);
+      tdTime.textContent = d.toLocaleString();
+
+      tr.append(tdId, tdName, tdContent, tdTime);
+      postsTbody.appendChild(tr);
+    }
+  }
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const payload = {
+      name: nameInput.value || "名無し",
+      seed: seedInput.value || undefined,
+      password: passInput.value || "",
+      content: textInput.value
+    };
+    socket.emit("post", payload, res => {
+      if(res && res.ok) textInput.value = "";
+    });
+  });
+
+  refreshBtn.addEventListener("click", () => {
+    socket.emit("noop");
+  });
+})();
+</script>
+
 </body>
 </html>
