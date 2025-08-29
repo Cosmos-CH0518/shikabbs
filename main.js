@@ -1,26 +1,23 @@
-const socket = io("https://damarekozou.onrender.com"); // 中心BBSのURL
+const socket = io("https://damarekozou.onrender.com");
 
 const postsContainer = document.getElementById("posts");
 const nameInput = document.getElementById("name");
-const seedInput = document.getElementById("seed");
 const contentInput = document.getElementById("content");
 const sendBtn = document.getElementById("sendBtn");
 
-// Helper: タイムスタンプを見やすく
+// Helper: タイムスタンプ整形
 function formatTime(ts) {
     const d = new Date(ts);
     return d.toLocaleString();
 }
 
-// 投稿をレンダリング
+// 投稿表示
 function renderPosts(posts) {
-    // 最新順
     postsContainer.innerHTML = "";
     posts.sort((a,b) => b.id - a.id).forEach(p => {
         const div = document.createElement("div");
         div.className = "post";
 
-        // 名前 + シード
         const header = document.createElement("div");
         header.className = "header";
 
@@ -54,7 +51,7 @@ function renderPosts(posts) {
 // 初期データ取得
 socket.on("init_posts", renderPosts);
 
-// 新規投稿を受信
+// 新規投稿受信
 socket.on("new_post", post => {
     renderPosts([post, ...Array.from(postsContainer.children).map(div => ({
         id: parseInt(div.dataset.id),
@@ -66,13 +63,12 @@ socket.on("new_post", post => {
     }))]);
 });
 
-// 投稿ボタン
+// 投稿送信
 sendBtn.addEventListener("click", () => {
     const name = nameInput.value.trim();
-    const seed = seedInput.value.trim();
     const content = contentInput.value.trim();
     if(!name || !content) return alert("名前と内容を入力してください");
 
-    socket.emit("post", { name, seed, content });
+    socket.emit("post", { name, content });
     contentInput.value = "";
 });
