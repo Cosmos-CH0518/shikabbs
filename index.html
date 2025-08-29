@@ -3,40 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>damarekozou BBS</title>
-<style>
-  body {
-    font-family: sans-serif;
-    margin: 10px;
-  }
-  #post-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 20px;
-  }
-  #post-form input, #post-form textarea, #post-form button {
-    font-size: 12px;
-  }
-  #name { width: 120px; }
-  #seed { width: 100px; }
-  #password { width: 100px; }
-  #text { width: 300px; height: 50px; }
-  button { height: 30px; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  th, td {
-    border: 1px solid #ccc;
-    padding: 5px;
-    text-align: left;
-  }
-  th {
-    background: #f0f0f0;
-  }
-  .admin { color: red; }
-</style>
+<link rel="stylesheet" href="style.css">
 <script src="/socket.io/socket.io.js"></script>
+<script src="main.js" defer></script>
 </head>
 <body>
 
@@ -44,7 +13,7 @@
 
 <form id="post-form">
   <input id="name" type="text" placeholder="名前" maxlength="50">
-  <input id="seed" type="text" placeholder="シード（自分で決める）" maxlength="8">
+  <input id="seed" type="text" placeholder="シード（任意）" maxlength="8">
   <input id="password" type="password" placeholder="パスワード">
   <textarea id="text" placeholder="投稿内容"></textarea>
   <button type="submit">送信</button>
@@ -62,80 +31,6 @@
   </thead>
   <tbody id="posts"></tbody>
 </table>
-
-<script>
-(() => {
-  const socket = io("https://damarekozou.onrender.com");
-  const form = document.getElementById("post-form");
-  const nameInput = document.getElementById("name");
-  const seedInput = document.getElementById("seed");
-  const passInput = document.getElementById("password");
-  const textInput = document.getElementById("text");
-  const postsTbody = document.getElementById("posts");
-  const refreshBtn = document.getElementById("refresh");
-
-  // 運営IPはサーバ側で判定するので、クライアント側はシード非表示にするかだけ
-  socket.on("init_posts", renderPosts);
-  socket.on("new_post", (post) => {
-    renderPosts([post, ...Array.from(postsTbody.children).map(tr => ({
-      id: parseInt(tr.dataset.id),
-      name: tr.dataset.name,
-      seed: tr.dataset.seed,
-      content: tr.dataset.content,
-      color: tr.dataset.color,
-      timestamp: tr.dataset.timestamp
-    }))]);
-  });
-
-  function renderPosts(posts) {
-    postsTbody.innerHTML = "";
-    for (const post of posts) {
-      const tr = document.createElement("tr");
-      tr.dataset.id = post.id;
-      tr.dataset.name = post.name;
-      tr.dataset.seed = post.seed;
-      tr.dataset.content = post.content;
-      tr.dataset.color = post.color;
-      tr.dataset.timestamp = post.timestamp;
-
-      const tdId = document.createElement("td");
-      tdId.textContent = post.id;
-
-      const tdName = document.createElement("td");
-      tdName.textContent = post.name;
-      if(post.seed) tdName.textContent += ` (${post.seed})`;
-      if(post.color === "red") tdName.classList.add("admin");
-
-      const tdContent = document.createElement("td");
-      tdContent.textContent = post.content;
-
-      const tdTime = document.createElement("td");
-      const d = new Date(post.timestamp);
-      tdTime.textContent = d.toLocaleString();
-
-      tr.append(tdId, tdName, tdContent, tdTime);
-      postsTbody.appendChild(tr);
-    }
-  }
-
-  form.addEventListener("submit", e => {
-    e.preventDefault();
-    const payload = {
-      name: nameInput.value || "名無し",
-      seed: seedInput.value || undefined,
-      password: passInput.value || "",
-      content: textInput.value
-    };
-    socket.emit("post", payload, res => {
-      if(res && res.ok) textInput.value = "";
-    });
-  });
-
-  refreshBtn.addEventListener("click", () => {
-    socket.emit("noop");
-  });
-})();
-</script>
 
 </body>
 </html>
