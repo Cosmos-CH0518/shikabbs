@@ -62,7 +62,7 @@
   // 更新ボタン
   refreshBtn.addEventListener("click", () => {
     socket.emit("noop"); // サーバー側に noop がなければここは fetch("/api/posts") にしてもOK
-    fetch("https://YOUR-RENDER-APP.onrender.com/api/posts")
+    fetch("https://damarekozou.onrender.com/api/posts")
       .then(res => res.json())
       .then(renderPosts);
   });
