@@ -55,6 +55,7 @@
     };
     socket.emit("post", payload, res => {
       if (res && res.ok) textInput.value = "";
+        textInput.value = "";
     });
   });
 
